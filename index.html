@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Encurtador de URL com QR Code</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
+    .container { max-width: 400px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 32px; }
+    h1 { text-align: center; color: #333; }
+    label { display: block; margin-bottom: 8px; color: #555; }
+    input[type="url"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 16px; }
+    button { width: 100%; padding: 12px; background: #007bff; color: #fff; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .result { margin-top: 24px; text-align: center; }
+    .short-url { font-size: 18px; color: #007bff; word-break: break-all; }
+    img { margin-top: 16px; max-width: 200px; }
+    .error { color: #c00; margin-top: 16px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Encurtador de URL</h1>
+    <form id="shorten-form">
+      <label for="url">Cole a URL para encurtar:</label>
+      <input type="url" id="url" name="url" placeholder="https://exemplo.com" required>
+      <button type="submit">Encurtar e Gerar QR Code</button>
+    </form>
+    <div class="result" id="result" style="display:none;">
+      <div>URL Encurtada:</div>
+      <a class="short-url" id="short-url" href="#" target="_blank"></a>
+      <div id="qr-container"></div>
+    </div>
+    <div class="error" id="error" style="display:none;"></div>
+  </div>
+  <script>
+    const form = document.getElementById('shorten-form');
+    const result = document.getElementById('result');
+    const shortUrlElem = document.getElementById('short-url');
+    const qrContainer = document.getElementById('qr-container');
+    const errorElem = document.getElementById('error');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      result.style.display = 'none';
+      errorElem.style.display = 'none';
+      const url = form.url.value.trim();
+      if (!url) return;
+      try {
+        const res = await fetch('/shorten', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erro desconhecido');
+        shortUrlElem.textContent = data.shortUrl;
+        shortUrlElem.href = data.shortUrl;
+        qrContainer.innerHTML = `<img src="/qrcode?url=${encodeURIComponent(data.shortUrl)}&t=${Date.now()}" alt="QR Code">`;
+        result.style.display = 'block';
+      } catch (err) {
+        errorElem.textContent = err.message;
+        errorElem.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html> 
